@@ -35,14 +35,31 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-          cache-dependency-path: tani-project/package.json
 
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 21
+
+      - name: Fix Capacitor config
+        working-directory: tani-project
+        run: |
+          rm -f capacitor.config.ts
+
+          cat > capacitor.config.json <<'EOF'
+          {
+            "appId": "com.anik.tani",
+            "appName": "Tani AI",
+            "webDir": "dist",
+            "server": {
+              "androidScheme": "https"
+            }
+          }
+          EOF
+
+          echo "Capacitor JSON config created."
+          cat capacitor.config.json
 
       - name: Fix esbuild dependency
         working-directory: tani-project
@@ -62,45 +79,6 @@ jobs:
             @capacitor/cli@7 \
             @capacitor/android@7 \
             --legacy-peer-deps
-
-      - name: Build web app
-        working-directory: tani-project
-        run: npm run build:web
-
-      - name: Create Android project
-        working-directory: tani-project
-        run: npx cap add android
-
-      - name: Sync Capacitor
-        working-directory: tani-project
-        run: npx cap sync android
-
-      - name: Build debug APK
-        working-directory: tani-project/android
-        run: ./gradlew assembleDebug --no-daemon
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: Tani-AI-debug-apk
-          path: tani-project/android/app/build/outputs/apk/debug/app-debug.apk
-          if-no-files-found: error
-          node-version: 20
-
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 21
-
-      - name: Install dependencies
-        working-directory: tani-project
-        run: npm install
-
-      - name: Install Capacitor
-        working-directory: tani-project
-        run: |
-          npm install @capacitor/core@7 @capacitor/cli@7 @capacitor/android@7
 
       - name: Build web app
         working-directory: tani-project
